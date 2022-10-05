@@ -1,0 +1,20 @@
+# package directories
+node_modules
+
+# Webpack directories
+.webpack
+
+lib/
+dist/
+outputs/
+localTest.ts
+localTest.*
+
+.env
+.env.txt
+
+.nyc_output/
+coverage/
+test-results.xml
+
+locaTestCases.ts

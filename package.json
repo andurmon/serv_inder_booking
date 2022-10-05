@@ -1,0 +1,35 @@
+{
+  "name": "serv_inder_booking",
+  "version": "1.0.0",
+  "description": "Web Scraping lambda to create bookings in Inder",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "local": "cls && ts-node localTest.local.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/andurmon/serv_inder_booking.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/andurmon/serv_inder_booking/issues"
+  },
+  "homepage": "https://github.com/andurmon/serv_inder_booking#readme",
+  "devDependencies": {
+    "@types/aws-lambda": "^8.10.30",
+    "@types/node": "^12.12.21",
+    "@types/uuid": "^8.3.0",
+    "ts-loader": "^9.3.1",
+    "ts-node": "^9.1.1",
+    "typescript": "^3.4.2"
+  },
+  "dependencies": {
+    "@types/aws-sdk": "^2.7.0",
+    "aws-sdk": "^2.505.0",
+    "dotenv": "^16.0.3",
+    "joi": "^17.6.0",
+    "puppeteer": "^18.1.0"
+  }
+}
