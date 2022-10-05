@@ -9,6 +9,7 @@ dist/
 outputs/
 localTest.ts
 localTest.*
+*.zip
 
 .env
 .env.txt

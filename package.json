@@ -5,6 +5,8 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
+    "zip": "tsc && 7z a -r serv_inder_booking.zip ./dist/* node_modules/",
+    "deploy": "aws s3 cp serv_inder_booking.zip s3://andurmon-dev-bucket0002 && aws lambda update-function-code --function-name beach-voley-booking --s3-bucket andurmon-dev-bucket0002 --s3-key serv_inder_booking.zip",
     "local": "cls && ts-node localTest.local.ts"
   },
   "repository": {
