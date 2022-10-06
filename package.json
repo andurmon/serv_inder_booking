@@ -1,37 +1,36 @@
 {
-  "name": "serv_inder_booking",
-  "version": "1.0.0",
-  "description": "Web Scraping lambda to create bookings in Inder",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "zip": "tsc && 7z a -r serv_inder_booking.zip ./dist/* node_modules/",
-    "deploy": "aws s3 cp serv_inder_booking.zip s3://andurmon-dev-bucket0002 && aws lambda update-function-code --function-name beach-voley-booking --s3-bucket andurmon-dev-bucket0002 --s3-key serv_inder_booking.zip",
-    "local": "cls && ts-node localTest.local.ts"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/andurmon/serv_inder_booking.git"
-  },
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/andurmon/serv_inder_booking/issues"
-  },
-  "homepage": "https://github.com/andurmon/serv_inder_booking#readme",
-  "devDependencies": {
-    "@types/aws-lambda": "^8.10.30",
-    "@types/node": "^12.12.21",
-    "@types/uuid": "^8.3.0",
-    "ts-loader": "^9.3.1",
-    "ts-node": "^9.1.1",
-    "typescript": "^3.4.2"
-  },
-  "dependencies": {
-    "@types/aws-sdk": "^2.7.0",
-    "aws-sdk": "^2.505.0",
-    "dotenv": "^16.0.3",
-    "joi": "^17.6.0",
-    "puppeteer": "^18.1.0"
-  }
+    "name": "serv_inder_booking",
+    "version": "1.0.0",
+    "description": "Web Scraping lambda to create bookings in Inder",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "zip": "tsc && 7z a -r serv_inder_booking.zip ./dist/* node_modules/",
+        "deploy": "aws s3 cp serv_inder_booking.zip s3://andurmon-dev-bucket0002 && aws lambda update-function-code --function-name beach-voley-booking --s3-bucket andurmon-dev-bucket0002 --s3-key serv_inder_booking.zip",
+        "local": "cls && ts-node localTest.ts"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/andurmon/serv_inder_booking.git"
+    },
+    "author": "",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/andurmon/serv_inder_booking/issues"
+    },
+    "homepage": "https://github.com/andurmon/serv_inder_booking#readme",
+    "devDependencies": {
+        "@types/aws-lambda": "^8.10.106",
+        "@types/node": "^12.20.55",
+        "ts-node": "^10.6.0",
+        "typescript": "4.7.4"
+    },
+    "dependencies": {
+        "aws-lambda": "^1.0.7",
+        "aws-sdk": "^2.505.0",
+        "chrome-aws-lambda": "^10.1.0",
+        "dotenv": "^16.0.3",
+        "joi": "^17.6.0",
+        "puppeteer-core": "10.1.0"
+    }
 }

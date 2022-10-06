@@ -8,3 +8,8 @@ export interface CaseUseRequestModel {
     cuentas: Cuenta[];
     horaInicial: string;
 }
+
+export interface ResponsePackage {
+    statusCode: number;
+    data: any
+}
