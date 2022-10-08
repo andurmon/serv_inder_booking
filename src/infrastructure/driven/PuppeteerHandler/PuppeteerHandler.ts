@@ -1,11 +1,13 @@
-import { ENTER } from "../../../utils/constants";
+import { ENTER, PUBLIC_BUCKET, PUBLIC_BUCKET_FOLDER } from "../../../utils/constants";
 
 import puppeteer from "puppeteer-core";
 import chromium from "chrome-aws-lambda";
 
-import * as fs from "fs";
 import IPuppeterHandler from "./IPuppeteerHandler";
 import { Cuenta } from "../../../domain/models/models";
+import { S3Manager } from "../s3/s3Handler";
+
+const s3Manager = new S3Manager();
 
 export default class PuppeterHandler implements IPuppeterHandler {
 
@@ -60,10 +62,15 @@ export default class PuppeterHandler implements IPuppeterHandler {
 
         await this.page.waitForNavigation();
 
-        const pantallazo = await this.page.screenshot();
-
-        fs.writeFileSync("outputs/screenshot.png", pantallazo);
+        const pantallazo = await this.page.screenshot({ type: "jpeg" });
         console.log('pantallazo: ', pantallazo);
+
+        await s3Manager.putObject({
+            //@ts-ignore
+            Body: pantallazo,
+            Bucket: PUBLIC_BUCKET,
+            Key: `${PUBLIC_BUCKET_FOLDER}/loginresult.jpeg`,
+        })
 
     }
 
