@@ -1,4 +1,4 @@
-import { ENTER, PUBLIC_BUCKET, PUBLIC_BUCKET_FOLDER } from "../../../utils/constants";
+import { ENTER, EXECUTABLE_PATH, HEADLESS, PUBLIC_BUCKET, PUBLIC_BUCKET_FOLDER, STAGE } from "../../../utils/constants";
 
 import puppeteer from "puppeteer-core";
 import chromium from "chrome-aws-lambda";
@@ -21,13 +21,12 @@ export default class PuppeterHandler implements IPuppeterHandler {
     async initBrowser() {
         // this.browser = await puppeteer.launch({ headless: HEADLESS });
         console.log('await chromium.executablePath: ', await chromium.executablePath);
-        console.log('chromium.args: ', chromium.args);
         this.browser = await chromium.puppeteer.launch({
             args: [...chromium.args, "--no-sandbox", "--disable-setuid-sandbox"],
             ignoreDefaultArgs: ['--disable-extensions'],
             defaultViewport: chromium.defaultViewport,
-            executablePath: (await chromium.executablePath) ?? "node_modules/chrome-aws-lambda/bin/chromium.br",
-            headless: chromium.headless,
+            executablePath: STAGE === "local" ? EXECUTABLE_PATH : await chromium.executablePath,
+            headless: HEADLESS,
             ignoreHTTPSErrors: true,
         });
 
@@ -40,7 +39,7 @@ export default class PuppeterHandler implements IPuppeterHandler {
      * 
      */
     async closeBrowser() {
-        this.browser.close();
+        if (STAGE != "local") this.browser.close();
     }
 
     /**
@@ -74,4 +73,31 @@ export default class PuppeterHandler implements IPuppeterHandler {
 
     }
 
+    /**
+     * 
+     */
+    async scenarioSelection() {
+        "#boxPadding > div > div.btnVerTodos > a:nth-child(2) > button"
+    }
+
+    /**
+     * 
+     */
+    async location() {
+
+    }
+
+    /**
+     * 
+     */
+    async athletes() {
+
+    }
+
+    /**
+     * 
+     */
+    async termsAndConfirmation() {
+
+    }
 }
