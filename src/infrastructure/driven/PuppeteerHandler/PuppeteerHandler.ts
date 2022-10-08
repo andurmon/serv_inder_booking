@@ -1,7 +1,6 @@
-import { ENTER } from "../../../utils/constants";
+import { ENTER, HEADLESS } from "../../../utils/constants";
 
-import puppeteer from "puppeteer-core";
-import chromium from "chrome-aws-lambda";
+import puppeteer from "puppeteer";
 
 import * as fs from "fs";
 import IPuppeterHandler from "./IPuppeteerHandler";
@@ -17,17 +16,8 @@ export default class PuppeterHandler implements IPuppeterHandler {
      * 
      */
     async initBrowser() {
-        // this.browser = await puppeteer.launch({ headless: HEADLESS });
-        console.log('await chromium.executablePath: ', await chromium.executablePath);
-        console.log('chromium.args: ', chromium.args);
-        this.browser = await chromium.puppeteer.launch({
-            args: [...chromium.args, "--no-sandbox", "--disable-setuid-sandbox"],
-            ignoreDefaultArgs: ['--disable-extensions'],
-            defaultViewport: chromium.defaultViewport,
-            executablePath: (await chromium.executablePath) ?? "node_modules/chrome-aws-lambda/bin/chromium.br",
-            headless: chromium.headless,
-            ignoreHTTPSErrors: true,
-        });
+        this.browser = await puppeteer.launch({ headless: HEADLESS });
+
 
         const pages = await this.browser.pages();
         this.page = pages[0];
