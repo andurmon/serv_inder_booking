@@ -1,12 +1,12 @@
 import aws from "aws-sdk";
-import { REGION } from "../../../utils/constants";
+import { Env } from "../../../utils/constants";
 
 export class S3Manager {
 
     s3: aws.S3;
 
     constructor() {
-        this.s3 = new aws.S3({ region: REGION });
+        this.s3 = new aws.S3({ region: Env.REGION });
     }
 
     /**

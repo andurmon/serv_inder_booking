@@ -1,13 +1,9 @@
-import { ENTER, EXECUTABLE_PATH, HEADLESS, PUBLIC_BUCKET, PUBLIC_BUCKET_FOLDER, STAGE } from "../../../utils/constants";
-
 import puppeteer from "puppeteer-core";
 import chromium from "chrome-aws-lambda";
 
 import IPuppeterHandler from "./IPuppeteerHandler";
-import { Cuenta } from "../../../domain/models/models";
-import { S3Manager } from "../s3/s3Handler";
-
-const s3Manager = new S3Manager();
+import { Env, ENTER, DocumentTypeCatalogAthletes } from "../../../utils/constants";
+import { AthletesList, Cuenta } from "../../../domain/models/models";
 
 export default class PuppeterHandler implements IPuppeterHandler {
 
@@ -19,27 +15,36 @@ export default class PuppeterHandler implements IPuppeterHandler {
      * 
      */
     async initBrowser() {
-        // this.browser = await puppeteer.launch({ headless: HEADLESS });
-        console.log('await chromium.executablePath: ', await chromium.executablePath);
         this.browser = await chromium.puppeteer.launch({
-            args: [...chromium.args, "--no-sandbox", "--disable-setuid-sandbox"],
+            args: [...chromium.args, `--window-size=1920,1080`],
             ignoreDefaultArgs: ['--disable-extensions'],
             defaultViewport: chromium.defaultViewport,
-            executablePath: STAGE === "local" ? EXECUTABLE_PATH : await chromium.executablePath,
-            headless: HEADLESS,
+            executablePath: Env.STAGE === "local" ? Env.EXECUTABLE_PATH : await chromium.executablePath,
+            headless: Env.HEADLESS,
             ignoreHTTPSErrors: true,
+            // devtools: false
         });
-
         const pages = await this.browser.pages();
         this.page = pages[0];
         this.keyboard = this.page.keyboard;
+        this.page.setDefaultTimeout(15000);
     }
 
     /**
      * 
      */
     async closeBrowser() {
-        if (STAGE != "local") this.browser.close();
+        if (Env.STAGE != "local") this.browser.close();
+    }
+
+    /**
+     * 
+     * @returns 
+     */
+    async screenshot(): Promise<string | void | Buffer> {
+        const pantallazo = await this.page.screenshot({ type: "jpeg" });
+        console.log('pantallazo: ', pantallazo);
+        return pantallazo;
     }
 
     /**
@@ -60,44 +65,128 @@ export default class PuppeterHandler implements IPuppeterHandler {
         await this.keyboard.press(ENTER);
 
         await this.page.waitForNavigation();
-
-        const pantallazo = await this.page.screenshot({ type: "jpeg" });
-        console.log('pantallazo: ', pantallazo);
-
-        await s3Manager.putObject({
-            //@ts-ignore
-            Body: pantallazo,
-            Bucket: PUBLIC_BUCKET,
-            Key: `${PUBLIC_BUCKET_FOLDER}/loginresult.jpeg`,
-        })
-
     }
 
     /**
      * 
      */
     async scenarioSelection() {
-        "#boxPadding > div > div.btnVerTodos > a:nth-child(2) > button"
+        await this.page.click("#boxPadding > div > div.btnVerTodos > a:nth-child(2) > button");
+        await this.page.waitForSelector('#escenario_deportivo_barrio', { visible: true });
+
+        await this.page.select('#escenario_deportivo_barrio', "461");
+
+
+        await this.page.waitForTimeout(2000);
+        await this.page.select('#escenario_deportivo', "509");
+
+        await this.page.click("#reserva_seleccion_0");
+
+        await this.page.waitForTimeout(2000);
+        await this.page.select('#disciplina_escenario_deportivoreserva', "39");
+
+        await this.page.$eval('#fechaInicio', (el: HTMLInputElement) => el.value = '22/10/2022');
+
+
+        await this.page.select('#reserva_jornada', "2");
+
+        await this.page.waitForTimeout(2000);
+
+        // Indicar horarios
+        const hora = 1700;
+        await this.page.click("#reserva_programaciones_5_inicioTarde");
+        await this.keyboard.type(hora.toString());
+        await this.page.click("#reserva_programaciones_5_finTarde");
+        await this.keyboard.type((hora + 100).toString());
+
+        await this.page.waitForTimeout(1000);
+        await this.page.click("#formulario_reserva_paso1 > div > div:nth-child(2) > div.col-md-8.fondoAzul2 > div > div.col-xs-12.col-sm-12.col-md-12.uno.contenedorInfoUno > div.col-xs-12.col-sm-12.col-md-12.uno > div:nth-child(21) > div.col-xs-12.col-md-12.d-flex > a > button");
+
+        await this.page.waitForTimeout(2000);
+        const errorBanner = await this.waitForSelector("#swal2-content");
+        console.log('errorBanner: ', errorBanner);
+
+        if (errorBanner) {
+            const valor = await errorBanner.evaluate((el: HTMLInputElement) => el.textContent);
+            console.log('valor: ', valor);
+
+            if (valor === "No existen divisiones disponibles para el escenario deportivo seleccionado en las fechas ingresadas.") {
+                console.log("Paila, no hay reserva");
+            }
+            return;
+        }
+        await this.page.click("#btnguardar");
+        await this.page.waitForNavigation();
     }
 
     /**
      * 
      */
     async location() {
-
+        await this.page.click("#reserva_divisiones_0");
+        await this.page.click("#btnguardar");
+        await this.page.waitForNavigation();
     }
 
     /**
      * 
+     * @param athletesList 
      */
-    async athletes() {
+    async athletes(athletesList: Array<AthletesList>) {
+        console.log('athletesList: ', athletesList);
+        //#usuarios_division_reserva_type_divisiones_0_divisionReservas_1_tipoIdentificacion
+        for (let i = 0; i < athletesList.length; i++) {
+            await this.page.click("#usuarios_division_reserva_type_divisiones_0_divisionReservas > span.col-xs-12.col-md-12.text-center.collection-action.collection-rescue-add > a");
+        }
 
+        for (let i = 0; i < athletesList.length; i++) {
+            const athlete = athletesList[i];
+            await this.page.select(`#usuarios_division_reserva_type_divisiones_0_divisionReservas_${i + 1}_tipoIdentificacion`, DocumentTypeCatalogAthletes.getDocTypeAthl(athlete.docType));
+            //
+
+            await this.page.click(`#s2id_fake_usuarios_division_reserva_type_divisiones_0_divisionReservas_${i + 1}_numeroIdentificacion`);
+            await this.keyboard.type(athlete.document);
+            await this.page.waitForTimeout(500);
+            await this.keyboard.press(ENTER);
+        }
+
+        await this.page.click("#btnguardar");
+        await this.page.waitForNavigation();
     }
 
     /**
      * 
      */
     async termsAndConfirmation() {
+        // Terms
+        await this.page.click("#reserva_terminos_0");
+        await this.page.click("#btnguardar");
+        await this.page.waitForTimeout(5000);
 
+        //Confirmation
+        await this.page.click("#btnguardar");
+        await this.page.waitForTimeout(5000);
+
+        await this.page.click("#btnguardar");
+        await this.page.waitForNavigation();
+
+    }
+
+    /**
+     * 
+     * @param selector 
+     * @returns 
+     */
+    protected async waitForSelector(selector: string): Promise<puppeteer.ElementHandle<Element> | null> {
+        try {
+            this.page.setDefaultTimeout(5000);
+            const errorBanner = await this.page.waitForSelector(selector, { hidden: false });
+            this.page.setDefaultTimeout(15000);
+            return errorBanner;
+        } catch (error) {
+            console.log('error.message: ', error.message);
+            this.page.setDefaultTimeout(15000);
+            return null;
+        }
     }
 }

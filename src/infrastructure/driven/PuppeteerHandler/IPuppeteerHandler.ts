@@ -1,4 +1,4 @@
-import { Cuenta } from "../../../domain/models/models";
+import { AthletesList, Cuenta } from "../../../domain/models/models";
 
 export default interface IPuppeterHandler {
 
@@ -17,5 +17,30 @@ export default interface IPuppeterHandler {
      * @param cuenta 
      */
     login(cuenta: Cuenta): Promise<void>;
+
+    /**
+     * 
+     */
+    screenshot(): Promise<string | void | Buffer>
+
+    /**
+     * 
+     */
+    scenarioSelection(): Promise<void>;
+
+    /**
+     * 
+     */
+    location(): Promise<void>;
+
+    /**
+     * 
+     */
+    athletes(athletesList: Array<AthletesList>): Promise<void>;
+
+    /**
+     * 
+     */
+    termsAndConfirmation(): Promise<void>;
 
 }
