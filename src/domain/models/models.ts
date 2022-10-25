@@ -8,10 +8,12 @@ export interface Cuenta {
 export interface CaseUseRequestModel {
     userList: Cuenta[];
     initTime: string;
+    initDate: string;
 }
 
 export interface ResponsePackage {
     statusCode: number;
+    message?: string;
     data: any
 }
 

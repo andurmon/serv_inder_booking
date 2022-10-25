@@ -17,7 +17,8 @@ export abstract class JoiSchema {
             }).required()
         ),
         initTime: Joi.number().min(1600).max(2100).required(),
-    }).unknown(true);
+        initDate: Joi.date().greater(Date.now()).required()//.options({ convert: false })
+    });
 
     static validateSchema(request: any) {
         let validation = JoiSchema.schema.validate(request);

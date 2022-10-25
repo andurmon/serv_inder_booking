@@ -26,7 +26,7 @@ export default interface IPuppeterHandler {
     /**
      * 
      */
-    scenarioSelection(): Promise<void>;
+    scenarioSelection(date: string, time: number): Promise<void>;
 
     /**
      * 
