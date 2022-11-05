@@ -70,13 +70,19 @@ export default class PuppeterHandler implements IPuppeterHandler {
         }
     }
 
+    async logout(): Promise<void> {
+        await this.page.goto("https://simon.inder.gov.co/admin/logout");
+    }
+
     /**
      * 
-     * @param date 
-     * @param time 
+     * @param initDate 
+     * @param initTime 
      * @returns 
      */
-    async scenarioSelection(date: string, time: number) {
+    async scenarioSelection(initDate: string, initTime: number) {
+        console.log('time: ', initTime);
+        console.log('date: ', initDate);
         try {
             await this.page.click("#boxPadding > div > div.btnVerTodos > a:nth-child(2) > button");
             await this.page.waitForSelector('#escenario_deportivo_barrio', { visible: true });
@@ -92,7 +98,14 @@ export default class PuppeterHandler implements IPuppeterHandler {
             await this.page.waitForTimeout(2000);
             await this.page.select('#disciplina_escenario_deportivoreserva', "39");
 
-            await this.page.$eval('#fechaInicio', (el: HTMLInputElement) => el.value = date);
+            const fechaInicio = await this.page.waitForSelector('#fechaInicio');
+            if (!fechaInicio) {
+                throw new Error("Fecha de inicio no encontrado");
+            }
+            await fechaInicio.evaluate((el: HTMLInputElement, initDate: string) => {
+                console.log('initDate: ', initDate);
+                el.value = initDate
+            }, initDate);
 
 
             await this.page.select('#reserva_jornada', "2");
@@ -101,9 +114,9 @@ export default class PuppeterHandler implements IPuppeterHandler {
 
             // Indicar horarios
             await this.page.click("#reserva_programaciones_5_inicioTarde");
-            await this.keyboard.type(time.toString());
+            await this.keyboard.type(initTime.toString());
             await this.page.click("#reserva_programaciones_5_finTarde");
-            await this.keyboard.type((time + 100).toString());
+            await this.keyboard.type((initTime + 100).toString());
 
             await this.page.waitForTimeout(1000);
             await this.page.click("#formulario_reserva_paso1 > div > div:nth-child(2) > div.col-md-8.fondoAzul2 > div > div.col-xs-12.col-sm-12.col-md-12.uno.contenedorInfoUno > div.col-xs-12.col-sm-12.col-md-12.uno > div:nth-child(21) > div.col-xs-12.col-md-12.d-flex > a > button");
@@ -116,14 +129,18 @@ export default class PuppeterHandler implements IPuppeterHandler {
                 const valor = await errorBanner.evaluate((el: HTMLInputElement) => el.textContent);
                 console.log('valor: ', valor);
 
-                if (valor === "No existen divisiones disponibles para el escenario deportivo seleccionado en las fechas ingresadas.") {
-                    console.log("Paila, no hay reserva");
+                if (valor) {
+                    if (valor === "No existen divisiones disponibles para el escenario deportivo seleccionado en las fechas ingresadas.") {
+                        console.log("Paila, no hay reserva");
+                    }
+                    throw new Error(valor);
                 }
-                return;
+                throw new Error("Error banner found");
             }
             await this.page.click("#btnguardar");
             await this.page.waitForNavigation();
         } catch (error) {
+            console.log('error: ', error);
             throw new Error("Error during Scenario Selection. " + error.message);
         }
     }
@@ -166,7 +183,8 @@ export default class PuppeterHandler implements IPuppeterHandler {
             }
 
             await this.page.click("#btnguardar");
-            await this.page.waitForNavigation();
+            await this.page.waitForTimeout(5000);
+            // await this.page.waitForNavigation();
         } catch (error) {
             throw new Error("Error adding Athletes. " + error.message);
         }
@@ -188,7 +206,7 @@ export default class PuppeterHandler implements IPuppeterHandler {
             await this.page.waitForTimeout(5000);
 
             await this.page.click("#btnguardar");
-            await this.page.waitForNavigation();
+            // await this.page.waitForNavigation();
         } catch (error) {
             throw new Error("Error accepting terms and conditions. " + error.message);
         }

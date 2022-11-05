@@ -2,6 +2,7 @@ import IPuppeterHandler from "../infrastructure/driven/PuppeteerHandler/IPuppete
 import { S3Manager } from "../infrastructure/driven/s3/s3Handler";
 import { SnsManager } from "../infrastructure/driven/Sns/snsEmailPublisher";
 import { Env } from "../utils/constants";
+import { parseDate } from "../utils/dateParser";
 import { CaseUseRequestModel, ResponsePackage } from "./models/models";
 
 
@@ -19,26 +20,30 @@ export default class InderBookingCaseUse {
         console.log('CaseUse request: ', request);
         try {
             let screenshots = [];
+            const initDate = parseDate(request.initDate);
 
             //* 1. Init
             await this.puppeteerManager.initBrowser();
 
             for (let i = 0; i < request.userList.length; i++) {
                 let cuenta = request.userList[i];
+                const initTime = Number(request.initTime) + 100 * i;
+                console.log('initTime: ', initTime);
+                console.log('initDate: ', initDate);
 
                 //* 2. Login
                 await this.puppeteerManager.login(cuenta);
 
                 //* 3. Scenario Selection
-                await this.puppeteerManager.scenarioSelection(request.initDate, Number(request.initTime));
+                await this.puppeteerManager.scenarioSelection(initDate, Number(request.initTime));
 
-                //* 4. Locations
+                // //* 4. Locations
                 await this.puppeteerManager.location();
 
-                //* 5. Athletes
+                // //* 5. Athletes
                 await this.puppeteerManager.athletes(cuenta.guests);
 
-                //* 6. Terms and Conditions
+                // //* 6. Terms and Conditions
                 await this.puppeteerManager.termsAndConfirmation();
 
                 //* 7. Screenshot
@@ -47,6 +52,7 @@ export default class InderBookingCaseUse {
                 screenshots.push(pantallazo);
 
                 //* 8. LogOut
+                await this.puppeteerManager.logout();
             }
 
             //* 9. Close Browser
@@ -55,8 +61,9 @@ export default class InderBookingCaseUse {
             //* 10. Save screenshots to S3 Bucket
             let urls = "";
             for (let i = 0; i < screenshots.length; i++) {
+                const initTime = Number(request.initTime) + 100 * i;
                 let screen = screenshots[i];
-                let filename = `${Env.PUBLIC_BUCKET_FOLDER}/booking-${request.userList[i].user}-${request.initTime}.jpeg`;
+                let filename = `${Env.PUBLIC_BUCKET_FOLDER}/booking-${request.userList[i].user}-${initDate}-${initTime}.jpeg`;
 
                 if (typeof screen === "object") {
                     const putObjResp = await this.s3Manager.putObject({

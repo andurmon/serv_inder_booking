@@ -20,13 +20,19 @@ export default interface IPuppeterHandler {
 
     /**
      * 
+     * @param cuenta 
+     */
+    logout(): Promise<void>;
+
+    /**
+     * 
      */
     screenshot(): Promise<string | void | Buffer>
 
     /**
      * 
      */
-    scenarioSelection(date: string, time: number): Promise<void>;
+    scenarioSelection(initDate: string, initTime: number): Promise<void>;
 
     /**
      * 

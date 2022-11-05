@@ -26,7 +26,7 @@ export const handler = async (event: APIGatewayProxyEvent, context?: Context): P
         if (!validation.valid) {
             console.log('validation:ERROR ', validation);
             return responseAdapter({
-                statusCode: 400, data: {}
+                statusCode: 400, message: validation.message, data: {}
             });
         }
         const s3Manager = new S3Manager();
