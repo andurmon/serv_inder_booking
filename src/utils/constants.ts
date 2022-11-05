@@ -10,6 +10,8 @@ export abstract class Env {
     static readonly STAGE: string = <string>process?.env?.STAGE;
     static readonly EXECUTABLE_PATH = "puppeteer/node_modules/puppeteer-core/.local-chromium/win64-1045629/chrome-win/chrome.exe"; //C:/Program Files (x86)/Google/Chrome/Application/chrome.exe
     static readonly TOPIC_ARN = <string>process.env.TOPIC_ARN;
+
+    static readonly USERS_LAMBDA_NAME = <string>process.env.USERS_LAMBDA_NAME;
 }
 
 //509 - CANCHA DE VOLEY PLAYA N. 1 DE LA UNIDAD DEPORTIVA ATANASIO GIRARDOT

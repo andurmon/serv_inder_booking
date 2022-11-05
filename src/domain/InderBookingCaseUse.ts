@@ -1,25 +1,28 @@
+import { LambdaManager } from "../infrastructure/driven/lambda/lambdaInvoke";
 import IPuppeterHandler from "../infrastructure/driven/PuppeteerHandler/IPuppeteerHandler";
 import { S3Manager } from "../infrastructure/driven/s3/s3Handler";
 import { SnsManager } from "../infrastructure/driven/Sns/snsEmailPublisher";
 import { Env } from "../utils/constants";
 import { parseDate } from "../utils/dateParser";
-import { CaseUseRequestModel, ResponsePackage } from "./models/models";
+import { BookingsList, CaseUseRequestModel, ResponsePackage } from "./models/models";
 
 
 export default class InderBookingCaseUse {
 
     puppeteerManager: IPuppeterHandler
     s3Manager: S3Manager;
+    lambdaManager: LambdaManager;
 
-    constructor(puppeteerManager: IPuppeterHandler, s3Manager: S3Manager) {
+    constructor(puppeteerManager: IPuppeterHandler, s3Manager: S3Manager, lambdaManager: LambdaManager) {
         this.puppeteerManager = puppeteerManager;
         this.s3Manager = s3Manager;
+        this.lambdaManager = lambdaManager;
     }
 
     async caseUseExecute(request: CaseUseRequestModel): Promise<ResponsePackage> {
-        console.log('CaseUse request: ', request);
+
         try {
-            let screenshots = [];
+            let screenshotsList: BookingsList[] = [];
             const initDate = parseDate(request.initDate);
 
             //* 1. Init
@@ -29,13 +32,13 @@ export default class InderBookingCaseUse {
                 let cuenta = request.userList[i];
                 const initTime = Number(request.initTime) + 100 * i;
                 console.log('initTime: ', initTime);
-                console.log('initDate: ', initDate);
+                // console.log('initDate: ', initDate);
 
                 //* 2. Login
                 await this.puppeteerManager.login(cuenta);
 
                 //* 3. Scenario Selection
-                await this.puppeteerManager.scenarioSelection(initDate, Number(request.initTime));
+                await this.puppeteerManager.scenarioSelection(initDate, initTime);
 
                 // //* 4. Locations
                 await this.puppeteerManager.location();
@@ -48,8 +51,7 @@ export default class InderBookingCaseUse {
 
                 //* 7. Screenshot
                 const pantallazo = await this.puppeteerManager.screenshot();
-                console.log('pantallazo: ', pantallazo);
-                screenshots.push(pantallazo);
+                screenshotsList.push({ valid: true, document: cuenta.user, screenshot: pantallazo });
 
                 //* 8. LogOut
                 await this.puppeteerManager.logout();
@@ -60,18 +62,20 @@ export default class InderBookingCaseUse {
 
             //* 10. Save screenshots to S3 Bucket
             let urls = "";
-            for (let i = 0; i < screenshots.length; i++) {
+            for (let i = 0; i < screenshotsList.length; i++) {
                 const initTime = Number(request.initTime) + 100 * i;
-                let screen = screenshots[i];
+                let screen = screenshotsList[i];
                 let filename = `${Env.PUBLIC_BUCKET_FOLDER}/booking-${request.userList[i].user}-${initDate}-${initTime}.jpeg`;
 
-                if (typeof screen === "object") {
-                    const putObjResp = await this.s3Manager.putObject({
-                        Body: screen,
+                if (typeof screen.screenshot === "object" && screen.valid) {
+                    await this.s3Manager.putObject({
+                        Body: screen.screenshot,
                         Bucket: Env.PUBLIC_BUCKET,
                         Key: filename,
                     });
-                    console.log('putObjResp: ', putObjResp);
+                    await this.lambdaManager.invokeFunction(Env.USERS_LAMBDA_NAME,
+                        { document: screen.document, available: true }
+                    );
                 }
                 urls += `\n - https://andurmon-dev-website-roar.s3.us-east-2.amazonaws.com/inder/${filename}`
 

@@ -4,6 +4,7 @@ import chromium from "chrome-aws-lambda";
 import IPuppeterHandler from "./IPuppeteerHandler";
 import { Env, ENTER, DocumentTypeCatalogAthletes } from "../../../utils/constants";
 import { AthletesList, Cuenta } from "../../../domain/models/models";
+import { LogHandler } from "../../../utils/LogHandler";
 
 export default class PuppeterHandler implements IPuppeterHandler {
 
@@ -43,7 +44,6 @@ export default class PuppeterHandler implements IPuppeterHandler {
      */
     async screenshot(): Promise<string | void | Buffer> {
         const pantallazo = await this.page.screenshot({ type: "jpeg" });
-        console.log('pantallazo: ', pantallazo);
         return pantallazo;
     }
 
@@ -81,8 +81,6 @@ export default class PuppeterHandler implements IPuppeterHandler {
      * @returns 
      */
     async scenarioSelection(initDate: string, initTime: number) {
-        console.log('time: ', initTime);
-        console.log('date: ', initDate);
         try {
             await this.page.click("#boxPadding > div > div.btnVerTodos > a:nth-child(2) > button");
             await this.page.waitForSelector('#escenario_deportivo_barrio', { visible: true });
@@ -103,7 +101,6 @@ export default class PuppeterHandler implements IPuppeterHandler {
                 throw new Error("Fecha de inicio no encontrado");
             }
             await fechaInicio.evaluate((el: HTMLInputElement, initDate: string) => {
-                console.log('initDate: ', initDate);
                 el.value = initDate
             }, initDate);
 
@@ -123,15 +120,14 @@ export default class PuppeterHandler implements IPuppeterHandler {
 
             await this.page.waitForTimeout(2000);
             const errorBanner = await this.waitForSelector("#swal2-content");
-            console.log('errorBanner: ', errorBanner);
 
             if (errorBanner) {
                 const valor = await errorBanner.evaluate((el: HTMLInputElement) => el.textContent);
-                console.log('valor: ', valor);
+                LogHandler.anyMessage({ valor }, "Error Banner", "Error banner found with the message " + valor);
 
                 if (valor) {
                     if (valor === "No existen divisiones disponibles para el escenario deportivo seleccionado en las fechas ingresadas.") {
-                        console.log("Paila, no hay reserva");
+                        LogHandler.errorMessage("Paila, no hay reservas", "No reservas", {});
                     }
                     throw new Error(valor);
                 }
@@ -140,7 +136,7 @@ export default class PuppeterHandler implements IPuppeterHandler {
             await this.page.click("#btnguardar");
             await this.page.waitForNavigation();
         } catch (error) {
-            console.log('error: ', error);
+            LogHandler.errorMessage(error.message, "Error during scenario selection", {});
             throw new Error("Error during Scenario Selection. " + error.message);
         }
     }
@@ -164,8 +160,6 @@ export default class PuppeterHandler implements IPuppeterHandler {
      */
     async athletes(athletesList: Array<AthletesList>) {
         try {
-
-            console.log('athletesList: ', athletesList);
             //#usuarios_division_reserva_type_divisiones_0_divisionReservas_1_tipoIdentificacion
             for (let i = 0; i < athletesList.length; i++) {
                 await this.page.click("#usuarios_division_reserva_type_divisiones_0_divisionReservas > span.col-xs-12.col-md-12.text-center.collection-action.collection-rescue-add > a");
@@ -224,7 +218,6 @@ export default class PuppeterHandler implements IPuppeterHandler {
             this.page.setDefaultTimeout(15000);
             return errorBanner;
         } catch (error) {
-            console.log('error.message: ', error.message);
             this.page.setDefaultTimeout(15000);
             return null;
         }

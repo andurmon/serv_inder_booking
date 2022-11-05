@@ -1,5 +1,6 @@
 import aws from "aws-sdk";
 import { Env } from "../../../utils/constants";
+import { LogHandler } from "../../../utils/LogHandler";
 
 export class S3Manager {
 
@@ -13,8 +14,7 @@ export class S3Manager {
      * 
      */
     async putObject(params: aws.S3.PutObjectRequest) {
-        console.log('params: ', params);
         const putObjectResponse = await this.s3.putObject(params).promise();
-        console.log('putObjectResponse: ', putObjectResponse);
+        LogHandler.integrationMessage(params, putObjectResponse, "PutObject S3", "");
     }
 }

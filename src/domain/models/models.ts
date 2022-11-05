@@ -21,3 +21,9 @@ export interface AthletesList {
     document: string;
     docType: "CC" | "TI" | "CE";
 }
+
+export interface BookingsList {
+    valid: boolean;
+    document: string;
+    screenshot: string | void | Buffer
+}

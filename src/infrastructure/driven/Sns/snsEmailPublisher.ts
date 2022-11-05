@@ -1,5 +1,6 @@
 import aws from "aws-sdk";
 import { Env } from "../../../utils/constants";
+import { LogHandler } from "../../../utils/LogHandler";
 
 export class SnsManager {
 
@@ -20,7 +21,7 @@ export class SnsManager {
             TopicArn: Env.TOPIC_ARN
         }
         const publishEmail = await this.sns.publish(params).promise();
-        console.log('publishEmail: ', publishEmail);
+        LogHandler.integrationMessage(params, publishEmail, "Publish Email response", "");
         return publishEmail;
     }
 }

@@ -5,39 +5,45 @@ import PuppeterHandler from "./infrastructure/driven/PuppeteerHandler/PuppeteerH
 import InderBookingCaseUse from "./domain/InderBookingCaseUse";
 import { S3Manager } from "./infrastructure/driven/s3/s3Handler";
 import { responseAdapter } from "./infrastructure/driving/Adapter";
+import { LogHandler } from "./utils/LogHandler";
+import { LambdaManager } from "./infrastructure/driven/lambda/lambdaInvoke";
 
 export const handler = async (event: APIGatewayProxyEvent, context?: Context): Promise<APIGatewayProxyResult> => {
+
+    LogHandler.getInstance();
+
     try {
-        if (context) {
-            console.log('context: ', context);
-        }
-        console.log('event: ', event);
+
+        LogHandler.requestMessage(event);
+
+        if (context) LogHandler.anyMessage(context, "context", "")
 
         const body = (event.body ? JSON.parse(event.body) : undefined);
-        console.log('body: ', body);
+
         if (!body) {
-            return responseAdapter({
-                statusCode: 400,
-                data: {}
-            });
+            const resp = { statusCode: 400, data: {}, message: "Body is null or undefined" }
+            LogHandler.responseMessage(resp);
+            return responseAdapter(resp);
         }
 
         const validation = JoiSchema.validateSchema(body);
         if (!validation.valid) {
-            console.log('validation:ERROR ', validation);
-            return responseAdapter({
-                statusCode: 400, message: validation.message, data: {}
-            });
+            const resp = { statusCode: 400, message: validation.message, data: {} };
+            LogHandler.responseMessage(resp);
+            return responseAdapter(resp);
         }
+
         const s3Manager = new S3Manager();
         const puppeteerManager = new PuppeterHandler();
-        const caseUse = new InderBookingCaseUse(puppeteerManager, s3Manager);
+        const lambdaManager = new LambdaManager();
+        const caseUse = new InderBookingCaseUse(puppeteerManager, s3Manager, lambdaManager);
 
         const caseUseResposne = await caseUse.caseUseExecute(body);
+        LogHandler.responseMessage(caseUseResposne);
         return responseAdapter(caseUseResposne);
 
     } catch (error) {
-        console.log('error: ', error);
+        LogHandler.errorMessage(error.message, "Error in handler", error)
         return responseAdapter({
             statusCode: 500,
             data: {}
