@@ -1,4 +1,4 @@
-export interface Cuenta {
+export interface Account {
     user: string;
     pass: string;
     docType: "CC" | "TI" | "CE";
@@ -6,7 +6,7 @@ export interface Cuenta {
 }
 
 export interface CaseUseRequestModel {
-    userList: Cuenta[];
+    userList: Account[];
     initTime: string;
     initDate: string;
 }
@@ -26,4 +26,16 @@ export interface BookingsList {
     valid: boolean;
     document: string;
     screenshot: string | void | Buffer
+}
+export interface ScreenShot {
+    document: string;
+    screenshot: string | void | Buffer
+}
+
+export interface IResponse {
+    valid: boolean;
+    step: number;
+    message: string;
+    detail?: string;
+    screenshot?: ScreenShot
 }

@@ -14,6 +14,14 @@ export abstract class Env {
     static readonly USERS_LAMBDA_NAME = <string>process.env.USERS_LAMBDA_NAME;
 }
 
+export const STEPS_ARRAY = [
+    "Login",
+    "Selección de escenario deportivo",
+    "Seleciond e locacion de juego",
+    "Invitados",
+    "Acpetar terminos y condiciones",
+]
+
 //509 - CANCHA DE VOLEY PLAYA N. 1 DE LA UNIDAD DEPORTIVA ATANASIO GIRARDOT
 
 export abstract class Selectors {

@@ -4,7 +4,8 @@ import { S3Manager } from "../infrastructure/driven/s3/s3Handler";
 import { SnsManager } from "../infrastructure/driven/Sns/snsEmailPublisher";
 import { Env } from "../utils/constants";
 import { parseDate } from "../utils/dateParser";
-import { BookingsList, CaseUseRequestModel, ResponsePackage } from "./models/models";
+import { LogHandler } from "../utils/LogHandler";
+import { CaseUseRequestModel, IResponse, ResponsePackage } from "./models/models";
 
 
 export default class InderBookingCaseUse {
@@ -22,69 +23,90 @@ export default class InderBookingCaseUse {
     async caseUseExecute(request: CaseUseRequestModel): Promise<ResponsePackage> {
 
         try {
-            let screenshotsList: BookingsList[] = [];
+            let bookingsList: IResponse[] = [];
             const initDate = parseDate(request.initDate);
 
             //* 1. Init
             await this.puppeteerManager.initBrowser();
 
             for (let i = 0; i < request.userList.length; i++) {
-                let cuenta = request.userList[i];
+                const account = request.userList[i];
                 const initTime = Number(request.initTime) + 100 * i;
                 console.log('initTime: ', initTime);
-                // console.log('initDate: ', initDate);
 
-                //* 2. Login
-                await this.puppeteerManager.login(cuenta);
+                //* 1.
+                const resu = await this.puppeteerManager.createOneBooking(account, initDate, initTime);
+                LogHandler.anyMessage(resu, "result booking", `Booking result for user ${i}`);
 
-                //* 3. Scenario Selection
-                await this.puppeteerManager.scenarioSelection(initDate, initTime);
-
-                // //* 4. Locations
-                await this.puppeteerManager.location();
-
-                // //* 5. Athletes
-                await this.puppeteerManager.athletes(cuenta.guests);
-
-                // //* 6. Terms and Conditions
-                await this.puppeteerManager.termsAndConfirmation();
-
-                //* 7. Screenshot
+                //* 2. Screenshot
                 const pantallazo = await this.puppeteerManager.screenshot();
-                screenshotsList.push({ valid: true, document: cuenta.user, screenshot: pantallazo });
 
-                //* 8. LogOut
+                //* 3. LogOut
                 await this.puppeteerManager.logout();
+
+                // if (resu.valid) {
+                resu.screenshot = { document: account.user, screenshot: pantallazo };
+                bookingsList.push(resu);
+
             }
+
+            console.log('bookingsList: ', bookingsList);
 
             //* 9. Close Browser
             await this.puppeteerManager.closeBrowser();
 
             //* 10. Save screenshots to S3 Bucket
+            let message = "";
             let urls = "";
-            for (let i = 0; i < screenshotsList.length; i++) {
-                const initTime = Number(request.initTime) + 100 * i;
-                let screen = screenshotsList[i];
-                let filename = `${Env.PUBLIC_BUCKET_FOLDER}/booking-${request.userList[i].user}-${initDate}-${initTime}.jpeg`;
+            for (let i = 0; i < bookingsList.length; i++) {
+                let booking = bookingsList[i];
+                let screen = booking.screenshot;
+                if (!screen) continue;
 
-                if (typeof screen.screenshot === "object" && screen.valid) {
+                const date = parseDate(request.initDate, "")
+                const initTime = Number(request.initTime) + 100 * i;
+
+                let filename = `${Env.PUBLIC_BUCKET_FOLDER}/booking-${request.userList[i].user}-${date}-${initTime}.jpeg`;
+
+                if (typeof screen.screenshot === "object") {
                     await this.s3Manager.putObject({
                         Body: screen.screenshot,
                         Bucket: Env.PUBLIC_BUCKET,
                         Key: filename,
                     });
+                    urls += `\n - https://andurmon-dev-website-roar.s3.us-east-2.amazonaws.com/inder/${filename}`
+                }
+                if (booking.valid) {
                     await this.lambdaManager.invokeFunction(Env.USERS_LAMBDA_NAME,
-                        { document: screen.document, available: true }
+                        { document: screen.document, available: false }
                     );
                 }
-                urls += `\n - https://andurmon-dev-website-roar.s3.us-east-2.amazonaws.com/inder/${filename}`
+            }
 
+            message = "Reserva exitosas: " + urls;
+
+            let succ = bookingsList.find(e => e.valid);
+            let err = bookingsList.find(e => e.valid === false);
+            if (err) {
+                return {
+                    statusCode: succ ? 207 : 500,
+                    message: succ ? "Reserva Parcialmente Exitosa" : err.message,
+                    data: {
+                        reservas: bookingsList.map(booking => {
+                            return {
+                                valid: booking.valid,
+                                step: booking.step,
+                                message: booking.message,
+                                detail: booking.detail,
+                            }
+                        })
+                    }
+                }
             }
 
             //* 11. Send final notification
             const sns = new SnsManager();
-            await sns.publishMessage(`Reserva exitosas: ` + urls)
-
+            await sns.publishMessage(message)
             return {
                 statusCode: 200,
                 message: "Reserva Exitosa",

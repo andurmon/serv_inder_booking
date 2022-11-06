@@ -94,7 +94,7 @@ export abstract class LogHandler {
             messageObject
 
         }
-        LogHandler.Logger.trace(JSON.stringify(log));
+        LogHandler.Logger.info(JSON.stringify(log));
         // LogHandler.Logger.debug(JSON.stringify(log));
     }
 

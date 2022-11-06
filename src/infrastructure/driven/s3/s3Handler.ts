@@ -15,6 +15,6 @@ export class S3Manager {
      */
     async putObject(params: aws.S3.PutObjectRequest) {
         const putObjectResponse = await this.s3.putObject(params).promise();
-        LogHandler.integrationMessage(params, putObjectResponse, "PutObject S3", "");
+        LogHandler.integrationMessage({ Bucket: params.Bucket, Key: params.Key }, putObjectResponse, "PutObject S3", "");
     }
 }

@@ -1,6 +1,14 @@
-import { AthletesList, Cuenta } from "../../../domain/models/models";
+import { AthletesList, Account, IResponse } from "../../../domain/models/models";
 
 export default interface IPuppeterHandler {
+
+    /**
+     * 
+     * @param cuenta 
+     * @param initDate 
+     * @param initTime 
+     */
+    createOneBooking(cuenta: Account, initDate: string, initTime: number): Promise<IResponse>;
 
     /**
      * 
@@ -16,7 +24,7 @@ export default interface IPuppeterHandler {
      * 
      * @param cuenta 
      */
-    login(cuenta: Cuenta): Promise<void>;
+    login(cuenta: Account): Promise<void>;
 
     /**
      * 

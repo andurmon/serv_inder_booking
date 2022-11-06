@@ -2,8 +2,8 @@ import puppeteer from "puppeteer-core";
 import chromium from "chrome-aws-lambda";
 
 import IPuppeterHandler from "./IPuppeteerHandler";
-import { Env, ENTER, DocumentTypeCatalogAthletes } from "../../../utils/constants";
-import { AthletesList, Cuenta } from "../../../domain/models/models";
+import { Env, ENTER, DocumentTypeCatalogAthletes, STEPS_ARRAY } from "../../../utils/constants";
+import { AthletesList, Account, IResponse } from "../../../domain/models/models";
 import { LogHandler } from "../../../utils/LogHandler";
 
 export default class PuppeterHandler implements IPuppeterHandler {
@@ -11,6 +11,34 @@ export default class PuppeterHandler implements IPuppeterHandler {
     protected browser: puppeteer.Browser;
     protected page: puppeteer.Page;
     protected keyboard: puppeteer.Keyboard;
+
+    async createOneBooking(account: Account, initDate: string, initTime: number): Promise<IResponse> {
+        let step = 0;
+        try {
+            //* 1. Login
+            await this.login(account);
+
+            //* 2. Scenario Selection
+            step++;
+            await this.scenarioSelection(initDate, initTime);
+
+            //* 3. Locations
+            step++;
+            await this.location();
+
+            //* 4. Athletes
+            step++;
+            await this.athletes(account.guests);
+
+            //* 5. Terms and Conditions
+            step++;
+            await this.termsAndConfirmation();
+
+            return { valid: true, step, message: "success" }
+        } catch (error) {
+            return { valid: false, step, message: `Falló en  ${STEPS_ARRAY[step]}`, detail: error.message }
+        }
+    }
 
     /**
      * 
@@ -51,7 +79,7 @@ export default class PuppeterHandler implements IPuppeterHandler {
      * 
      * @param cuenta 
      */
-    async login(cuenta: Cuenta) {
+    async login(cuenta: Account) {
         try {
             await this.page.goto('https://simon.inder.gov.co/admin/login');
 
@@ -65,6 +93,7 @@ export default class PuppeterHandler implements IPuppeterHandler {
             await this.keyboard.press(ENTER);
 
             await this.page.waitForNavigation();
+            // Wait for url to be https://simon.inder.gov.co/admin/dashboard (?)
         } catch (error) {
             throw new Error("Error during Login. " + error.message);
         }
