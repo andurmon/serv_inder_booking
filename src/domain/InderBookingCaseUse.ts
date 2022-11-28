@@ -79,13 +79,13 @@ export default class InderBookingCaseUse {
                     });
                 }
                 if (booking.valid) {
-                    urlsSucceded += `\n - https://andurmon-dev-website-roar.s3.us-east-2.amazonaws.com/inder/${filename}`
+                    urlsSucceded += `\n - https://andurmon-dev-website-roar.s3.us-east-2.amazonaws.com/${filename}`
                     await this.lambdaManager.invokeFunction(Env.USERS_LAMBDA_NAME,
                         { document: screen.document, available: false }
                     );
                     continue;
                 }
-                urlsError += `\n - https://andurmon-dev-website-roar.s3.us-east-2.amazonaws.com/inder/${filename}`
+                urlsError += `\n - https://andurmon-dev-website-roar.s3.us-east-2.amazonaws.com/${filename}`
             }
 
             message = "Reserva exitosas: " + urlsSucceded;
