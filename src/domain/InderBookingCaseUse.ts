@@ -13,18 +13,20 @@ export default class InderBookingCaseUse {
     puppeteerManager: IPuppeterHandler
     s3Manager: S3Manager;
     lambdaManager: LambdaManager;
+    snsManager: SnsManager;
 
-    constructor(puppeteerManager: IPuppeterHandler, s3Manager: S3Manager, lambdaManager: LambdaManager) {
+    constructor(puppeteerManager: IPuppeterHandler, s3Manager: S3Manager, lambdaManager: LambdaManager, snsManager: SnsManager) {
         this.puppeteerManager = puppeteerManager;
         this.s3Manager = s3Manager;
         this.lambdaManager = lambdaManager;
+        this.snsManager = snsManager;
     }
 
     async caseUseExecute(request: CaseUseRequestModel): Promise<ResponsePackage> {
 
         try {
             let bookingsList: IResponse[] = [];
-            const initDate = parseDate(request.initDate);
+            const initDate = request.initDate;
 
             //* 1. Init
             await this.puppeteerManager.initBrowser();
@@ -34,7 +36,7 @@ export default class InderBookingCaseUse {
                 const initTime = Number(request.initTime) + 100 * i;
                 console.log('initTime: ', initTime);
 
-                //* 1.
+                //* 1. Create one booking
                 const resu = await this.puppeteerManager.createOneBooking(account, initDate, initTime);
                 LogHandler.anyMessage(resu, "result booking", `Booking result for user ${i}`);
 
@@ -57,7 +59,8 @@ export default class InderBookingCaseUse {
 
             //* 10. Save screenshots to S3 Bucket
             let message = "";
-            let urls = "";
+            let urlsSucceded = "";
+            let urlsError = "";
             for (let i = 0; i < bookingsList.length; i++) {
                 let booking = bookingsList[i];
                 let screen = booking.screenshot;
@@ -74,19 +77,26 @@ export default class InderBookingCaseUse {
                         Bucket: Env.PUBLIC_BUCKET,
                         Key: filename,
                     });
-                    urls += `\n - https://andurmon-dev-website-roar.s3.us-east-2.amazonaws.com/inder/${filename}`
                 }
                 if (booking.valid) {
+                    urlsSucceded += `\n - https://andurmon-dev-website-roar.s3.us-east-2.amazonaws.com/inder/${filename}`
                     await this.lambdaManager.invokeFunction(Env.USERS_LAMBDA_NAME,
                         { document: screen.document, available: false }
                     );
+                    continue;
                 }
+                urlsError += `\n - https://andurmon-dev-website-roar.s3.us-east-2.amazonaws.com/inder/${filename}`
             }
 
-            message = "Reserva exitosas: " + urls;
+            message = "Reserva exitosas: " + urlsSucceded;
 
             let succ = bookingsList.find(e => e.valid);
             let err = bookingsList.find(e => e.valid === false);
+
+            //* 11. Send final notification
+            if (urlsError !== "") message += "\n Reservas fallidas:" + urlsError;
+            await this.snsManager.publishMessage(message);
+
             if (err) {
                 return {
                     statusCode: succ ? 207 : 500,
@@ -104,9 +114,6 @@ export default class InderBookingCaseUse {
                 }
             }
 
-            //* 11. Send final notification
-            const sns = new SnsManager();
-            await sns.publishMessage(message)
             return {
                 statusCode: 200,
                 message: "Reserva Exitosa",

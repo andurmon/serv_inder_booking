@@ -7,6 +7,7 @@ import { S3Manager } from "./infrastructure/driven/s3/s3Handler";
 import { responseAdapter } from "./infrastructure/driving/Adapter";
 import { LogHandler } from "./utils/LogHandler";
 import { LambdaManager } from "./infrastructure/driven/lambda/lambdaInvoke";
+import { SnsManager } from "./infrastructure/driven/Sns/snsEmailPublisher";
 
 export const handler = async (event: APIGatewayProxyEvent, context?: Context): Promise<APIGatewayProxyResult> => {
 
@@ -36,7 +37,8 @@ export const handler = async (event: APIGatewayProxyEvent, context?: Context): P
         const s3Manager = new S3Manager();
         const puppeteerManager = new PuppeterHandler();
         const lambdaManager = new LambdaManager();
-        const caseUse = new InderBookingCaseUse(puppeteerManager, s3Manager, lambdaManager);
+        const snsManager: SnsManager = new SnsManager();
+        const caseUse = new InderBookingCaseUse(puppeteerManager, s3Manager, lambdaManager, snsManager);
 
         const caseUseResposne = await caseUse.caseUseExecute(body);
         LogHandler.responseMessage(caseUseResposne);

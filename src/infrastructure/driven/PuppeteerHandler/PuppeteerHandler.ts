@@ -2,9 +2,10 @@ import puppeteer from "puppeteer-core";
 import chromium from "chrome-aws-lambda";
 
 import IPuppeterHandler from "./IPuppeteerHandler";
-import { Env, ENTER, DocumentTypeCatalogAthletes, STEPS_ARRAY } from "../../../utils/constants";
+import { Env, ENTER, DocumentTypeCatalogAthletes, STEPS_ARRAY, Selectors } from "../../../utils/constants";
 import { AthletesList, Account, IResponse } from "../../../domain/models/models";
 import { LogHandler } from "../../../utils/LogHandler";
+import { parseDate } from "../../../utils/dateParser";
 
 export default class PuppeterHandler implements IPuppeterHandler {
 
@@ -111,6 +112,10 @@ export default class PuppeterHandler implements IPuppeterHandler {
      */
     async scenarioSelection(initDate: string, initTime: number) {
         try {
+            const date = new Date(initDate);
+            let initDateStr = parseDate(initDate);
+            let weekday = date.getDay();
+
             await this.page.click("#boxPadding > div > div.btnVerTodos > a:nth-child(2) > button");
             await this.page.waitForSelector('#escenario_deportivo_barrio', { visible: true });
 
@@ -131,17 +136,18 @@ export default class PuppeterHandler implements IPuppeterHandler {
             }
             await fechaInicio.evaluate((el: HTMLInputElement, initDate: string) => {
                 el.value = initDate
-            }, initDate);
+            }, initDateStr);
 
-
-            await this.page.select('#reserva_jornada', "2");
-
+            //Jornada: Tarde
+            await this.page.select(Selectors.jornada, "2");
             await this.page.waitForTimeout(2000);
 
+            const timeSelectors = Selectors.timeSelectorByWeekday(weekday, initTime >= 1200);
+
             // Indicar horarios
-            await this.page.click("#reserva_programaciones_5_inicioTarde");
+            await this.page.click(timeSelectors[0]);
             await this.keyboard.type(initTime.toString());
-            await this.page.click("#reserva_programaciones_5_finTarde");
+            await this.page.click(timeSelectors[1]);
             await this.keyboard.type((initTime + 100).toString());
 
             await this.page.waitForTimeout(1000);

@@ -25,6 +25,30 @@ export const STEPS_ARRAY = [
 //509 - CANCHA DE VOLEY PLAYA N. 1 DE LA UNIDAD DEPORTIVA ATANASIO GIRARDOT
 
 export abstract class Selectors {
+    static jornada = '#reserva_jornada';
+
+    static timeSelectorByWeekday(weekday: number, afternoon: boolean) {
+        let inderWeekDay = weekday - 1;
+        inderWeekDay = inderWeekDay < 0 ? 6 : inderWeekDay;
+        console.log('inderWeekDay: ', inderWeekDay);
+
+        const selJornada = afternoon ? "Tarde" : "Manana";
+        return [`#reserva_programaciones_${inderWeekDay}_inicio${selJornada}`, `#reserva_programaciones_${inderWeekDay}_fin${selJornada}`];
+    }
+
+}
+
+export abstract class Catalogs {
+
+    static MORNING = "1";
+    static AFTERNOON = "2";
+
+    static getJornada(afternoon: boolean) {
+        if (!afternoon) {
+            return this.MORNING;
+        }
+        return this.AFTERNOON;
+    }
 
 }
 
